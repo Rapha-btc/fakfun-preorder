@@ -1305,15 +1305,24 @@ describe("T-Shirt Pre-Order Contract - Comprehensive Tests", () => {
         deployer
       );
 
-      const artistPayment =
-        cvToValue(artistBalanceAfter.result) -
-        cvToValue(artistBalanceBefore.result);
-      const oracleFee =
-        cvToValue(oracleBalanceAfter.result) -
-        cvToValue(oracleBalanceBefore.result);
+      const artistBalanceBeforeNum = Number(
+        artistBalanceBefore.result.value.value
+      );
+      const artistBalanceAfterNum = Number(
+        artistBalanceAfter.result.value.value
+      );
+      const oracleBalanceBeforeNum = Number(
+        oracleBalanceBefore.result.value.value
+      );
+      const oracleBalanceAfterNum = Number(
+        oracleBalanceAfter.result.value.value
+      );
 
-      expect(artistPayment).toBe(45000000n); // 45 USDA to artist
-      expect(oracleFee).toBe(5000000n); // 5 USDA fee to oracle
+      const artistPayment = artistBalanceAfterNum - artistBalanceBeforeNum;
+      const oracleFee = oracleBalanceAfterNum - oracleBalanceBeforeNum;
+
+      expect(artistPayment).toBe(45000000); // 45 USDA to artist
+      expect(oracleFee).toBe(5000000); // 5 USDA fee to oracle
     });
 
     it("should correctly handle 50% split payments", () => {
@@ -1369,19 +1378,30 @@ describe("T-Shirt Pre-Order Contract - Comprehensive Tests", () => {
         deployer
       );
 
-      const artistPayment =
-        cvToValue(artistBalanceAfter.result) -
-        cvToValue(artistBalanceBefore.result);
-      const buyerRefund =
-        cvToValue(buyerBalanceAfter.result) -
-        cvToValue(buyerBalanceBefore.result);
-      const oracleFee =
-        cvToValue(oracleBalanceAfter.result) -
-        cvToValue(oracleBalanceBefore.result);
+      const artistBalanceBeforeNum = Number(
+        artistBalanceBefore.result.value.value
+      );
+      const artistBalanceAfterNum = Number(
+        artistBalanceAfter.result.value.value
+      );
+      const buyerBalanceBeforeNum = Number(
+        buyerBalanceBefore.result.value.value
+      );
+      const buyerBalanceAfterNum = Number(buyerBalanceAfter.result.value.value);
+      const oracleBalanceBeforeNum = Number(
+        oracleBalanceBefore.result.value.value
+      );
+      const oracleBalanceAfterNum = Number(
+        oracleBalanceAfter.result.value.value
+      );
 
-      expect(artistPayment).toBe(22500000n); // 22.5 USDA to artist
-      expect(buyerRefund).toBe(22500000n); // 22.5 USDA refund to buyer
-      expect(oracleFee).toBe(5000000n); // 5 USDA fee to oracle
+      const artistPayment = artistBalanceAfterNum - artistBalanceBeforeNum;
+      const buyerRefund = buyerBalanceAfterNum - buyerBalanceBeforeNum;
+      const oracleFee = oracleBalanceAfterNum - oracleBalanceBeforeNum;
+
+      expect(artistPayment).toBe(22500000); // 22.5 USDA to artist
+      expect(buyerRefund).toBe(22500000); // 22.5 USDA refund to buyer
+      expect(oracleFee).toBe(5000000); // 5 USDA fee to oracle
     });
 
     it("should verify total contract balance remains correct", () => {
@@ -1409,9 +1429,14 @@ describe("T-Shirt Pre-Order Contract - Comprehensive Tests", () => {
         deployer
       );
 
-      expect(cvToValue(contractBalanceAfter.result)).toBeLessThan(
-        cvToValue(contractBalanceBefore.result)
+      const contractBalanceBeforeNum = Number(
+        contractBalanceBefore.result.value.value
       );
+      const contractBalanceAfterNum = Number(
+        contractBalanceAfter.result.value.value
+      );
+
+      expect(contractBalanceAfterNum).toBeLessThan(contractBalanceBeforeNum);
     });
   });
 
@@ -1534,8 +1559,7 @@ describe("T-Shirt Pre-Order Contract - Comprehensive Tests", () => {
         [],
         deployer
       );
-      expect(cvToValue(initialStatus.result).orders).toBe(0);
-
+      expect(Number(cvToValue(initialStatus.result).orders.value)).toBe(0);
       // Complete campaign (already done in beforeEach)
       // This test verifies the complete integration works as expected
       expect(true).toBe(true); // Placeholder for comprehensive integration test
