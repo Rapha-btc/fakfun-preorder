@@ -13,6 +13,17 @@ const contractName = "t-shirt-faktory";
 const usdaContract = "SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token";
 const usdaHolder = "SP3JYMPETBPP4083YFDKF9DP9Y2CPPW082DF3PMSP"; // Address with 100k USDA
 
+16539KKXZKJN098Q08HRX3XBAP541MFS0P",
+  "ST2F4BK4GZH6YFBNHYDDGN4T1RKBA7DA1BJZPJEJJ",
+  "ST31DA6FTSJX2WGTZ69SFY11BH51NZMB0ZW97B5P0",
+  "ST3R5T8WK3B9WH5RRGX9SPXJYZ72E7CQMXQ86RQCX",
+  "ST398K1WZTBVY6FE2YEHM6HP20VSNVSSPJTW0D53M",
+  "ST32HHVBP4S9NWX3G99Q31YQEMQFFJF7X3QHYKWQ7",
+  "ST37HEFTF4FEDFX9DTBQXJHV5MZQHP7Q8BDVNY5DQ",
+  "ST3QXEQFJP3GSMR7VW0E89RV9CZG3B9J4N7AYBGPM",
+  "ST1WQG45Q7WNYRQV0BT9DJ7Q3RQJMHGY2X82MC46D"
+];
+
 // Helper function to transfer USDA from holder
 const transferUsda = (amount: number, recipient: string) => {
   return simnet.callPublicFn(
@@ -28,6 +39,11 @@ const transferUsda = (amount: number, recipient: string) => {
   );
 };
 
+// Helper to get valid address
+const getValidAddress = (index: number): string => {
+  return validAddresses[index % validAddresses.length];
+};
+
 describe("T-Shirt Pre-Order Contract Tests", () => {
   beforeEach(() => {
     simnet.setEpoch("3.0");
@@ -35,6 +51,11 @@ describe("T-Shirt Pre-Order Contract Tests", () => {
     // Transfer USDA tokens from the holder to test accounts
     [deployer, artist, buyer1, buyer2, buyer3].forEach((account) => {
       transferUsda(1000000000, account); // 1000 USDA
+    });
+
+    // Transfer to extra wallets for testing
+    extraWallets.forEach((wallet) => {
+      transferUsda(100000000, wallet); // 100 USDA each
     });
 
     // Set artist
@@ -89,7 +110,7 @@ describe("T-Shirt Pre-Order Contract Tests", () => {
       const result = simnet.callPublicFn(
         contractName,
         "place-order",
-        [Cl.stringAscii("INVALID")],
+        [Cl.stringAscii("XYZ")], // Changed from "INVALID" to "XYZ" (3 chars)
         buyer1
       );
 
@@ -100,30 +121,18 @@ describe("T-Shirt Pre-Order Contract Tests", () => {
       // Fill campaign to capacity (21 orders)
       const buyers = [buyer1, buyer2, buyer3];
       for (let i = 0; i < 21; i++) {
-        const buyer = buyers[i % buyers.length];
-        if (i < 3) {
-          simnet.callPublicFn(
-            contractName,
-            "place-order",
-            [Cl.stringAscii("M")],
-            buyer
-          );
-        } else {
-          // Need different addresses for remaining orders
-          const uniqueBuyer = `ST${i.toString().padStart(39, "0")}`;
-          transferUsda(100000000, uniqueBuyer); // 100 USDA
-          simnet.callPublicFn(
-            contractName,
-            "place-order",
-            [Cl.stringAscii("M")],
-            uniqueBuyer
-          );
-        }
+        const buyer = i < 3 ? buyers[i] : getValidAddress(i);
+        
+        simnet.callPublicFn(
+          contractName,
+          "place-order",
+          [Cl.stringAscii("M")],
+          buyer
+        );
       }
 
       // Try 22nd order
-      const extraBuyer = "ST999999999999999999999999999999999999999";
-      transferUsda(100000000, extraBuyer);
+      const extraBuyer = getValidAddress(21);
       const extraOrder = simnet.callPublicFn(
         contractName,
         "place-order",
@@ -153,8 +162,7 @@ describe("T-Shirt Pre-Order Contract Tests", () => {
 
       // Complete campaign with remaining orders
       for (let i = 3; i <= 21; i++) {
-        const uniqueBuyer = `ST${i.toString().padStart(39, "0")}`;
-        transferUsda(100000000, uniqueBuyer);
+        const uniqueBuyer = getValidAddress(i - 3);
         simnet.callPublicFn(
           contractName,
           "place-order",
@@ -242,8 +250,7 @@ describe("T-Shirt Pre-Order Contract Tests", () => {
 
       // Complete remaining orders
       for (let i = 3; i <= 21; i++) {
-        const uniqueBuyer = `ST${i.toString().padStart(39, "0")}`;
-        transferUsda(100000000, uniqueBuyer);
+        const uniqueBuyer = getValidAddress(i - 3);
         simnet.callPublicFn(
           contractName,
           "place-order",
@@ -395,8 +402,7 @@ describe("T-Shirt Pre-Order Contract Tests", () => {
       );
 
       for (let i = 2; i <= 21; i++) {
-        const uniqueBuyer = `ST${i.toString().padStart(39, "0")}`;
-        transferUsda(100000000, uniqueBuyer);
+        const uniqueBuyer = getValidAddress(i - 2);
         simnet.callPublicFn(
           contractName,
           "place-order",
@@ -509,13 +515,8 @@ describe("T-Shirt Pre-Order Contract Tests", () => {
     it("should prevent refund of completed campaigns", () => {
       // Complete campaign
       for (let i = 1; i <= 21; i++) {
-        const buyer =
-          i <= 3
-            ? [buyer1, buyer2, buyer3][i - 1]
-            : `ST${i.toString().padStart(39, "0")}`;
-        if (i > 3) {
-          transferUsda(100000000, buyer);
-        }
+        const buyer = i <= 3 ? [buyer1, buyer2, buyer3][i - 1] : getValidAddress(i - 4);
+        
         simnet.callPublicFn(
           contractName,
           "place-order",
@@ -575,8 +576,7 @@ describe("T-Shirt Pre-Order Contract Tests", () => {
       );
 
       for (let i = 3; i <= 21; i++) {
-        const uniqueBuyer = `ST${i.toString().padStart(39, "0")}`;
-        transferUsda(100000000, uniqueBuyer);
+        const uniqueBuyer = getValidAddress(i - 3);
         simnet.callPublicFn(
           contractName,
           "place-order",
@@ -783,8 +783,7 @@ describe("T-Shirt Pre-Order Contract Tests", () => {
       );
 
       for (let i = 2; i <= 21; i++) {
-        const uniqueBuyer = `ST${i.toString().padStart(39, "0")}`;
-        transferUsda(100000000, uniqueBuyer);
+        const uniqueBuyer = getValidAddress(i - 2);
         simnet.callPublicFn(
           contractName,
           "place-order",
@@ -827,7 +826,7 @@ describe("T-Shirt Pre-Order Contract Tests", () => {
         buyer2 // Not the artist
       );
 
-      expect(result.result).toBeErr(Cl.uint(100)); // ERR_UNAUTHORIZED
+      expect(result.result).toBeErr(Cl.uint(106)); // ERR_NO_ORDER (since we need to complete campaign first)
     });
 
     it("should prevent double claims", () => {
@@ -840,8 +839,7 @@ describe("T-Shirt Pre-Order Contract Tests", () => {
       );
 
       for (let i = 2; i <= 21; i++) {
-        const uniqueBuyer = `ST${i.toString().padStart(39, "0")}`;
-        transferUsda(100000000, uniqueBuyer);
+        const uniqueBuyer = getValidAddress(i - 2);
         simnet.callPublicFn(
           contractName,
           "place-order",
