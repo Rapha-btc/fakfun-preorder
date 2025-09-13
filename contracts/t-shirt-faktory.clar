@@ -16,17 +16,23 @@
 (define-constant ERR_DEADLINE (err u111)) 
 (define-constant ERR_SHIPPING_TOO_SLOW (err u112)) 
 (define-constant ERR_ALREADY_CLAIMED (err u113)) 
+(define-constant ERR_CAMPAIGN_ONGOING (err u114))
+(define-constant ERR_CAMPAIGN_CLOSED (err u115)) 
 
 (define-constant PRICE u50000000) ;; 50 USDA
 (define-constant TARGET_ORDERS u21)
 (define-constant DEADLINE u2016) ;; 2 weeks in bitcoin blocks
-(define-constant FEES u5000000)
+(define-constant FEES u5000000) 
+(define-constant CAMPAIGN_DEADLINE u3024) 
+(define-constant CAMPAIGN_START burn-block-height)
+(define-constant ORACLE tx-sender)
 
 ;; State
-(define-data-var oracle principal tx-sender)
 (define-data-var artist principal tx-sender)
 (define-data-var total-orders uint u0)
 (define-data-var block-completion uint u0)
+(define-data-var campaign-status uint u1)
+
 
 ;; Order status: none | shipped | rated
 (define-map orders principal 
@@ -41,6 +47,8 @@
     claimed: bool
   }
 )
+
+(define-data-var buyer-list (list 21 principal) (list))
 
 ;; Valid sizes
 (define-map valid-sizes (string-ascii 3) bool)
@@ -66,7 +74,7 @@
     (asserts! (default-to false (map-get? valid-sizes size)) ERR_INVALID_SIZE)
     (asserts! (is-none (map-get? orders tx-sender)) ERR_ALREADY_ORDERED)
     (asserts! (< (var-get total-orders) TARGET_ORDERS) ERR_CAMPAIGN_FULL)
-    
+    (asserts! (> (var-get campaign-status) u0) ERR_CAMPAIGN_CLOSED)
     ;; Pay 50 USDA to contract
     (try! (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer PRICE tx-sender (as-contract tx-sender) none))
     
@@ -81,6 +89,7 @@
       artist-response: none,
       claimed: false
     })
+    (var-set buyer-list (unwrap! (as-max-len? (append (var-get buyer-list) tx-sender) u21) ERR_CAMPAIGN_FULL))
     (var-set total-orders (+ (var-get total-orders) u1))
     (if (is-eq (var-get total-orders) TARGET_ORDERS)
         (var-set block-completion burn-block-height)
@@ -152,7 +161,7 @@
         (artist-response-deadline (+ rated-block (* delivery-days u72))))
     
     (asserts! (not (get claimed order)) ERR_ALREADY_CLAIMED)
-    (asserts! (is-eq tx-sender (var-get oracle)) ERR_UNAUTHORIZED)
+    (asserts! (is-eq tx-sender ORACLE) ERR_UNAUTHORIZED)
     (asserts! (or (is-eq final-rating u0) (is-eq final-rating u50) (is-eq final-rating u100)) ERR_INVALID_RATING)
     
     (asserts! (> burn-block-height artist-response-deadline) ERR_DEADLINE)
@@ -202,7 +211,7 @@
   (let ((order (unwrap! (map-get? orders buyer) ERR_NO_ORDER))
         (rating (unwrap! (get rating order) ERR_NOT_RATED))
         (artista (var-get artist)))
-    (try! (as-contract (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer FEES tx-sender (var-get oracle) none)))
+    (try! (as-contract (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer FEES tx-sender ORACLE none)))
     (map-set orders buyer (merge order { claimed: true}))
     (if (is-eq rating u100)
       (as-contract (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer (- PRICE FEES) tx-sender artista none))
@@ -223,8 +232,29 @@
 ;; Admin functions
 (define-public (set-artist (new-artist principal))
   (begin
-    (asserts! (is-eq tx-sender (var-get oracle)) ERR_UNAUTHORIZED)
+    (asserts! (is-eq tx-sender ORACLE) ERR_UNAUTHORIZED)
     (var-set artist new-artist)
     (ok true)
+  )
+)
+
+(define-public (oracle-refund-incomplete-campaign)
+  (begin
+    ;; Check that we're past the campaign deadline (3 weeks = ~3024 burn blocks)
+    (asserts! (> burn-block-height (+ CAMPAIGN_START CAMPAIGN_DEADLINE)) ERR_CAMPAIGN_ONGOING)
+    
+    (asserts! (is-eq (var-get block-completion) u0) ERR_CAMPAIGN_FULL)
+    (asserts! (< (var-get total-orders) TARGET_ORDERS) ERR_CAMPAIGN_FULL)
+
+    (asserts! (is-eq tx-sender ORACLE) ERR_UNAUTHORIZED)
+    (var-set campaign-status u0)
+    (fold refund-buyer (var-get buyer-list) (ok true))
+  )
+)
+
+(define-private (refund-buyer (buyer principal) (previous-result (response bool uint)))
+  (begin
+    (try! previous-result) ;; this errors out and control flows out if previous is err u1 or other errors and continues if it's ok true
+    (as-contract (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer PRICE tx-sender buyer none))
   )
 )

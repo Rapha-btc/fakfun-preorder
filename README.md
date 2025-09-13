@@ -62,6 +62,12 @@ Buyer calls place-order(size) + pays 50 USDA
 
 ## Use Cases Summary
 
+### Campaign Never Completes
+
+- Multiple buyers place orders but total stays below 21
+- After 3 weeks, oracle calls refund function
+- **Result**: All buyers get full 50 USDA refund
+
 ### Successful Delivery (100% Rating)
 
 - Buyer pays 50 USDA → Artist ships → Buyer rates 100%
