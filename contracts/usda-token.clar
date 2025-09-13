@@ -1,7 +1,7 @@
 ;; SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token
 ;;;;;;;;;;;;;;;;;;;;; SIP 010 ;;;;;;;;;;;;;;;;;;;;;;
-(impl-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.sip-010-trait)
-(impl-trait .arkadiko-dao-token-trait-v1.dao-token-trait)
+;; (impl-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.sip-010-trait)
+;; (impl-trait .arkadiko-dao-token-trait-v1.dao-token-trait)
 
 ;; Defines the USDA Stablecoin according to the SIP-010 Standard
 (define-fungible-token usda)
@@ -36,10 +36,10 @@
 )
 
 (define-public (set-token-uri (value (string-utf8 256)))
-  (if (is-eq tx-sender (contract-call? .arkadiko-dao get-dao-owner))
+;;   (if (is-eq tx-sender (contract-call? .arkadiko-dao get-dao-owner))
     (ok (var-set token-uri value))
-    (err ERR-NOT-AUTHORIZED)
-  )
+;;     (err ERR-NOT-AUTHORIZED)
+;;   )
 )
 
 (define-read-only (get-token-uri)
@@ -72,6 +72,12 @@
   )
 )
 
+(define-public (mint (amount uint) (recipient principal))
+  (begin
+    (ft-mint? usda amount recipient)
+  )
+)
+
 ;; Burn method for DAO
 (define-public (burn-for-dao (amount uint) (sender principal))
   (begin
@@ -84,3 +90,4 @@
 (define-public (burn (amount uint) (sender principal))
   (err ERR-NOT-AUTHORIZED)
 )
+

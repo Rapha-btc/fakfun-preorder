@@ -1,5 +1,5 @@
 ;; FakFun T-Shirt Minimal Pre-Order Contract
-(use-trait ft-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.sip-010-trait)
+(use-trait ft-trait .sip-010-trait-ft-standard.sip-010-trait)
 
 ;; Constants
 (define-constant ERR_UNAUTHORIZED (err u100))
@@ -76,7 +76,7 @@
     (asserts! (< (var-get total-orders) TARGET_ORDERS) ERR_CAMPAIGN_FULL)
     (asserts! (> (var-get campaign-status) u0) ERR_CAMPAIGN_CLOSED)
     ;; Pay 50 USDA to contract
-    (try! (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer PRICE tx-sender (as-contract tx-sender) none))
+    (try! (contract-call? .usda-token transfer PRICE tx-sender (as-contract tx-sender) none))
     
     ;; Record order
     (map-set orders tx-sender { 
@@ -214,20 +214,20 @@
   (let ((order (unwrap! (map-get? orders buyer) ERR_NO_ORDER))
         (rating (unwrap! (get rating order) ERR_NOT_RATED))
         (artista (var-get artist)))
-    (try! (as-contract (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer FEES tx-sender ORACLE none)))
+    (try! (as-contract (contract-call? .usda-token transfer FEES tx-sender ORACLE none)))
     (map-set orders buyer (merge order { claimed: true}))
     (if (is-eq rating u100)
-      (as-contract (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer (- PRICE FEES) tx-sender artista none))
+      (as-contract (contract-call? .usda-token transfer (- PRICE FEES) tx-sender artista none))
       (if (is-eq rating u50)
         (begin
-          (try! (as-contract (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer (/ (- PRICE FEES) u2) tx-sender artista none)))
-          (as-contract (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer (- (- PRICE FEES) (/ (- PRICE FEES) u2)) tx-sender buyer none))
+          (try! (as-contract (contract-call? .usda-token transfer (/ (- PRICE FEES) u2) tx-sender artista none)))
+          (as-contract (contract-call? .usda-token transfer (- (- PRICE FEES) (/ (- PRICE FEES) u2)) tx-sender buyer none))
         )
         (if (is-eq rating u0)
-          (as-contract (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer (- PRICE FEES) tx-sender buyer none))
+          (as-contract (contract-call? .usda-token transfer (- PRICE FEES) tx-sender buyer none))
           (let ((artist-money (/ (* (- PRICE FEES) rating) u100)))
-          (try! (as-contract (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer artist-money tx-sender artista none)))
-          (as-contract (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer (- (- PRICE FEES) artist-money) tx-sender buyer none))
+          (try! (as-contract (contract-call? .usda-token transfer artist-money tx-sender artista none)))
+          (as-contract (contract-call? .usda-token transfer (- (- PRICE FEES) artist-money) tx-sender buyer none))
           )
         )
       )
@@ -265,6 +265,6 @@
 (define-private (refund-buyer (buyer principal) (previous-result (response bool uint)))
   (begin
     (try! previous-result) ;; this errors out and control flows out if previous is err u1 or other errors and continues if it's ok true
-    (as-contract (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer PRICE tx-sender buyer none))
+    (as-contract (contract-call? .usda-token transfer PRICE tx-sender buyer none))
   )
 )
