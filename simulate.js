@@ -47,6 +47,8 @@ async function simulateTShirtPreOrderContract() {
     "SP3RKM375AZAJR4WYCCEVMDB4DZEZMFF06C0XHB5P",
   ];
 
+  const STX_HOLDER = "SP1TXBBKYYCP3YVK2MH1PMWR7N0H2CYTKVAYH8YG4";
+
   const simulation = SimulationBuilder.new()
     .withSender(ORACLE)
 
@@ -60,6 +62,135 @@ async function simulateTShirtPreOrderContract() {
     })
 
     // ===== PHASE 1: CONTRACT SETUP =====
+
+    // STX funding address
+
+    // Fund all accounts with STX for gas fees (100 STX each)
+    .addSTXTransfer({
+      recipient: ORACLE,
+      amount: 1000000,
+      sender: STX_HOLDER,
+    })
+    .addSTXTransfer({
+      recipient: ARTIST,
+      amount: 1000000,
+      sender: STX_HOLDER,
+    })
+    .addSTXTransfer({
+      recipient: BUYER1,
+      amount: 1000000,
+      sender: STX_HOLDER,
+    })
+    .addSTXTransfer({
+      recipient: BUYER2,
+      amount: 1000000,
+      sender: STX_HOLDER,
+    })
+    .addSTXTransfer({
+      recipient: BUYER3,
+      amount: 1000000,
+      sender: STX_HOLDER,
+    })
+    .addSTXTransfer({
+      recipient: USDA_HOLDER,
+      amount: 1000000,
+      sender: STX_HOLDER,
+    })
+    .addSTXTransfer({
+      recipient: ADDITIONAL_BUYERS[0],
+      amount: 1000000,
+      sender: STX_HOLDER,
+    })
+    .addSTXTransfer({
+      recipient: ADDITIONAL_BUYERS[1],
+      amount: 1000000,
+      sender: STX_HOLDER,
+    })
+    .addSTXTransfer({
+      recipient: ADDITIONAL_BUYERS[2],
+      amount: 1000000,
+      sender: STX_HOLDER,
+    })
+    .addSTXTransfer({
+      recipient: ADDITIONAL_BUYERS[3],
+      amount: 1000000,
+      sender: STX_HOLDER,
+    })
+    .addSTXTransfer({
+      recipient: ADDITIONAL_BUYERS[4],
+      amount: 1000000,
+      sender: STX_HOLDER,
+    })
+    .addSTXTransfer({
+      recipient: ADDITIONAL_BUYERS[5],
+      amount: 1000000,
+      sender: STX_HOLDER,
+    })
+    .addSTXTransfer({
+      recipient: ADDITIONAL_BUYERS[6],
+      amount: 1000000,
+      sender: STX_HOLDER,
+    })
+    .addSTXTransfer({
+      recipient: ADDITIONAL_BUYERS[7],
+      amount: 1000000,
+      sender: STX_HOLDER,
+    })
+    .addSTXTransfer({
+      recipient: ADDITIONAL_BUYERS[8],
+      amount: 1000000,
+      sender: STX_HOLDER,
+    })
+    .addSTXTransfer({
+      recipient: ADDITIONAL_BUYERS[9],
+      amount: 1000000,
+      sender: STX_HOLDER,
+    })
+    .addSTXTransfer({
+      recipient: ADDITIONAL_BUYERS[10],
+      amount: 1000000,
+      sender: STX_HOLDER,
+    })
+    .addSTXTransfer({
+      recipient: ADDITIONAL_BUYERS[11],
+      amount: 1000000,
+      sender: STX_HOLDER,
+    })
+    .addSTXTransfer({
+      recipient: ADDITIONAL_BUYERS[12],
+      amount: 1000000,
+      sender: STX_HOLDER,
+    })
+    .addSTXTransfer({
+      recipient: ADDITIONAL_BUYERS[13],
+      amount: 1000000,
+      sender: STX_HOLDER,
+    })
+    .addSTXTransfer({
+      recipient: ADDITIONAL_BUYERS[14],
+      amount: 1000000,
+      sender: STX_HOLDER,
+    })
+    .addSTXTransfer({
+      recipient: ADDITIONAL_BUYERS[15],
+      amount: 1000000,
+      sender: STX_HOLDER,
+    })
+    .addSTXTransfer({
+      recipient: ADDITIONAL_BUYERS[16],
+      amount: 1000000,
+      sender: STX_HOLDER,
+    })
+    .addSTXTransfer({
+      recipient: ADDITIONAL_BUYERS[17],
+      amount: 1000000,
+      sender: STX_HOLDER,
+    })
+    .addSTXTransfer({
+      recipient: "SP2FXSN6RZ85Q18S3X0GE2N0FVAA1DN1DPMT9TX6E",
+      amount: 1000000,
+      sender: STX_HOLDER,
+    })
 
     // Fund test accounts with USDA (1000 USDA each = 1000000000 micro-USDA)
     .addContractCall({
@@ -148,6 +279,172 @@ async function simulateTShirtPreOrderContract() {
         uintCV(100000000), // 100 USDA
         principalCV(USDA_HOLDER),
         principalCV(ADDITIONAL_BUYERS[2]),
+        noneCV(),
+      ],
+      sender: USDA_HOLDER,
+    })
+
+    .addContractCall({
+      contract_id: USDA_CONTRACT,
+      function_name: "transfer",
+      function_args: [
+        uintCV(100000000), // 100 USDA
+        principalCV(USDA_HOLDER),
+        principalCV(ADDITIONAL_BUYERS[3]),
+        noneCV(),
+      ],
+      sender: USDA_HOLDER,
+    })
+    .addContractCall({
+      contract_id: USDA_CONTRACT,
+      function_name: "transfer",
+      function_args: [
+        uintCV(100000000), // 100 USDA
+        principalCV(USDA_HOLDER),
+        principalCV(ADDITIONAL_BUYERS[4]),
+        noneCV(),
+      ],
+      sender: USDA_HOLDER,
+    })
+    .addContractCall({
+      contract_id: USDA_CONTRACT,
+      function_name: "transfer",
+      function_args: [
+        uintCV(100000000), // 100 USDA
+        principalCV(USDA_HOLDER),
+        principalCV(ADDITIONAL_BUYERS[5]),
+        noneCV(),
+      ],
+      sender: USDA_HOLDER,
+    })
+    .addContractCall({
+      contract_id: USDA_CONTRACT,
+      function_name: "transfer",
+      function_args: [
+        uintCV(100000000), // 100 USDA
+        principalCV(USDA_HOLDER),
+        principalCV(ADDITIONAL_BUYERS[6]),
+        noneCV(),
+      ],
+      sender: USDA_HOLDER,
+    })
+    .addContractCall({
+      contract_id: USDA_CONTRACT,
+      function_name: "transfer",
+      function_args: [
+        uintCV(100000000), // 100 USDA
+        principalCV(USDA_HOLDER),
+        principalCV(ADDITIONAL_BUYERS[7]),
+        noneCV(),
+      ],
+      sender: USDA_HOLDER,
+    })
+    .addContractCall({
+      contract_id: USDA_CONTRACT,
+      function_name: "transfer",
+      function_args: [
+        uintCV(100000000), // 100 USDA
+        principalCV(USDA_HOLDER),
+        principalCV(ADDITIONAL_BUYERS[8]),
+        noneCV(),
+      ],
+      sender: USDA_HOLDER,
+    })
+    .addContractCall({
+      contract_id: USDA_CONTRACT,
+      function_name: "transfer",
+      function_args: [
+        uintCV(100000000), // 100 USDA
+        principalCV(USDA_HOLDER),
+        principalCV(ADDITIONAL_BUYERS[9]),
+        noneCV(),
+      ],
+      sender: USDA_HOLDER,
+    })
+    .addContractCall({
+      contract_id: USDA_CONTRACT,
+      function_name: "transfer",
+      function_args: [
+        uintCV(100000000), // 100 USDA
+        principalCV(USDA_HOLDER),
+        principalCV(ADDITIONAL_BUYERS[10]),
+        noneCV(),
+      ],
+      sender: USDA_HOLDER,
+    })
+    .addContractCall({
+      contract_id: USDA_CONTRACT,
+      function_name: "transfer",
+      function_args: [
+        uintCV(100000000), // 100 USDA
+        principalCV(USDA_HOLDER),
+        principalCV(ADDITIONAL_BUYERS[11]),
+        noneCV(),
+      ],
+      sender: USDA_HOLDER,
+    })
+    .addContractCall({
+      contract_id: USDA_CONTRACT,
+      function_name: "transfer",
+      function_args: [
+        uintCV(100000000), // 100 USDA
+        principalCV(USDA_HOLDER),
+        principalCV(ADDITIONAL_BUYERS[12]),
+        noneCV(),
+      ],
+      sender: USDA_HOLDER,
+    })
+    .addContractCall({
+      contract_id: USDA_CONTRACT,
+      function_name: "transfer",
+      function_args: [
+        uintCV(100000000), // 100 USDA
+        principalCV(USDA_HOLDER),
+        principalCV(ADDITIONAL_BUYERS[13]),
+        noneCV(),
+      ],
+      sender: USDA_HOLDER,
+    })
+    .addContractCall({
+      contract_id: USDA_CONTRACT,
+      function_name: "transfer",
+      function_args: [
+        uintCV(100000000), // 100 USDA
+        principalCV(USDA_HOLDER),
+        principalCV(ADDITIONAL_BUYERS[14]),
+        noneCV(),
+      ],
+      sender: USDA_HOLDER,
+    })
+    .addContractCall({
+      contract_id: USDA_CONTRACT,
+      function_name: "transfer",
+      function_args: [
+        uintCV(100000000), // 100 USDA
+        principalCV(USDA_HOLDER),
+        principalCV(ADDITIONAL_BUYERS[15]),
+        noneCV(),
+      ],
+      sender: USDA_HOLDER,
+    })
+    .addContractCall({
+      contract_id: USDA_CONTRACT,
+      function_name: "transfer",
+      function_args: [
+        uintCV(100000000), // 100 USDA
+        principalCV(USDA_HOLDER),
+        principalCV(ADDITIONAL_BUYERS[16]),
+        noneCV(),
+      ],
+      sender: USDA_HOLDER,
+    })
+    .addContractCall({
+      contract_id: USDA_CONTRACT,
+      function_name: "transfer",
+      function_args: [
+        uintCV(100000000), // 100 USDA
+        principalCV(USDA_HOLDER),
+        principalCV(ADDITIONAL_BUYERS[17]),
         noneCV(),
       ],
       sender: USDA_HOLDER,
