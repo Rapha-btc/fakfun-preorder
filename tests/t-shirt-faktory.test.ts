@@ -3,7 +3,7 @@ import { Cl, cvToValue } from "@stacks/transactions";
 
 const accounts = simnet.getAccounts();
 const deployer = accounts.get("deployer")!;
-const oracle = deployer; // Oracle is the deployer
+const oracle = "SP2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5E4R0JRM"; // deployer; // Oracle is the deployer
 const artist = accounts.get("wallet_1")!;
 const buyer1 = accounts.get("wallet_2")!;
 const buyer2 = accounts.get("wallet_3")!;

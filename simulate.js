@@ -1,4 +1,5 @@
 import { SimulationBuilder } from "stxer";
+import fs from "node:fs";
 import {
   contractPrincipalCV,
   uintCV,
@@ -18,7 +19,7 @@ async function simulateTShirtPreOrderContract() {
   const USDA_HOLDER = "SP3JYMPETBPP4083YFDKF9DP9Y2CPPW082DF3PMSP"; // Address with USDA
 
   // Test addresses from your arrays
-  const ORACLE = "SP2P5A2F3VN7G7CSF3W68AHYZ6ZM6BJSZV69MG03J"; // Acts as deployer/oracle
+  const ORACLE = "SP2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5E4R0JRM"; //"SP2P5A2F3VN7G7CSF3W68AHYZ6ZM6BJSZV69MG03J"; // Acts as deployer/oracle
   const ARTIST = "SP1QJ6SJWKHH54NJ8AZ48HJQ3MB036XHQKMCKQFMK";
   const BUYER1 = "SM2FXSN6RZ85Q18S3X0GE2N0FVAA1DN1DPPDXEB5X";
   const BUYER2 = "SP1Q1SHSTGQ7HT0CTXF1714NH1RFRZTXBSM4H7CX";
@@ -49,6 +50,15 @@ async function simulateTShirtPreOrderContract() {
   const simulation = SimulationBuilder.new()
     .withSender(ORACLE)
 
+    // ===== PHASE 0: CONTRACT DEPLOYMENT =====
+
+    // Deploy the t-shirt-faktory contract first
+    .addContractDeploy({
+      contract_name: "t-shirt-faktory",
+      source_code: fs.readFileSync("./contracts/t-shirt-faktory.clar", "utf8"),
+      clarity_version: ClarityVersion.Clarity3,
+    })
+
     // ===== PHASE 1: CONTRACT SETUP =====
 
     // Fund test accounts with USDA (1000 USDA each = 1000000000 micro-USDA)
@@ -56,7 +66,7 @@ async function simulateTShirtPreOrderContract() {
       contract_id: USDA_CONTRACT,
       function_name: "transfer",
       function_args: [
-        uintCV(1000000000), // 1000 USDA
+        uintCV(100000000), // 100 USDA
         principalCV(USDA_HOLDER),
         principalCV(ORACLE),
         noneCV(),
@@ -67,7 +77,7 @@ async function simulateTShirtPreOrderContract() {
       contract_id: USDA_CONTRACT,
       function_name: "transfer",
       function_args: [
-        uintCV(1000000000), // 1000 USDA
+        uintCV(100000000), // 100 USDA
         principalCV(USDA_HOLDER),
         principalCV(ARTIST),
         noneCV(),
@@ -491,3 +501,26 @@ This tests the complete t-shirt pre-order contract workflow with real mainnet ad
 
 // Run the simulation
 simulateTShirtPreOrderContract().catch(console.error);
+
+// This product can never exist without your support!
+
+// We receive sponsorship funds with:
+// SP212Y5JKN59YP3GYG07K3S8W5SSGE4KH6B5STXER
+
+// Feedbacks and feature requests are welcome.
+// To get in touch: contact@stxer.xyz
+// --------------------------------
+// Using block height 3486087 hash 0x3a39bc20a29e5e988fa9b815ccc277fc2e8aa5414e7ed32d6aafbdc5191732bb to run simulation.
+// Simulation will be available at: https://stxer.xyz/simulations/mainnet/0173f5eba6781d53bef948b1f0d539f2
+
+// ===== T-SHIRT PRE-ORDER CONTRACT SIMULATION =====
+// Simulation URL: https://stxer.xyz/simulations/mainnet/0173f5eba6781d53bef948b1f0d539f2
+
+// Expected Results:
+// - Phase 1: Contract setup with USDA funding and artist assignment
+// - Phase 2: 21 valid orders placed, campaign reaches capacity
+// - Phase 3: Artist ships orders with valid delivery estimates
+// - Phase 4: Various rating scenarios (100%, 50%, 0% with oracle decision)
+// - Phase 5: Final verification of balances and order statuses
+
+// This tests the complete t-shirt pre-order contract workflow with real mainnet addresses.
