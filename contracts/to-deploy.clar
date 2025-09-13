@@ -1,7 +1,5 @@
-;; FakFun T-Shirt Minimal Pre-Order Contract
 (use-trait ft-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.sip-010-trait)
 
-;; Constants
 (define-constant ERR_UNAUTHORIZED (err u100))
 (define-constant ERR_ALREADY_ORDERED (err u101))
 (define-constant ERR_CAMPAIGN_FULL (err u102))
@@ -19,22 +17,20 @@
 (define-constant ERR_CAMPAIGN_ONGOING (err u114))
 (define-constant ERR_CAMPAIGN_CLOSED (err u115)) 
 
-(define-constant PRICE u50000000) ;; 50 USDA
+(define-constant PRICE u50000000)
 (define-constant TARGET_ORDERS u21)
-(define-constant DEADLINE u2016) ;; 2 weeks in bitcoin blocks
+(define-constant DEADLINE u2016) 
 (define-constant FEES u5000000) 
 (define-constant CAMPAIGN_DEADLINE u3024) 
 (define-constant CAMPAIGN_START burn-block-height)
 (define-constant ORACLE tx-sender)
 
-;; State
 (define-data-var artist principal tx-sender)
 (define-data-var total-orders uint u0)
 (define-data-var block-completion uint u0)
 (define-data-var campaign-status uint u1)
 
 
-;; Order status: none | shipped | rated
 (define-map orders principal 
   { 
     size: (string-ascii 3),
@@ -50,7 +46,6 @@
 
 (define-data-var buyer-list (list 21 principal) (list))
 
-;; Valid sizes
 (define-map valid-sizes (string-ascii 3) bool)
 (map-set valid-sizes "XS" true)
 (map-set valid-sizes "S" true)
@@ -59,7 +54,6 @@
 (map-set valid-sizes "XL" true)
 (map-set valid-sizes "XXL" true)
 
-;; Read functions
 (define-read-only (get-order (buyer principal))
   (map-get? orders buyer)
 )
@@ -68,17 +62,15 @@
   { orders: (var-get total-orders), target: TARGET_ORDERS }
 )
 
-;; 1. User orders and pays
 (define-public (place-order (size (string-ascii 3)))
   (begin
     (asserts! (default-to false (map-get? valid-sizes size)) ERR_INVALID_SIZE)
     (asserts! (is-none (map-get? orders tx-sender)) ERR_ALREADY_ORDERED)
     (asserts! (< (var-get total-orders) TARGET_ORDERS) ERR_CAMPAIGN_FULL)
     (asserts! (> (var-get campaign-status) u0) ERR_CAMPAIGN_CLOSED)
-    ;; Pay 50 USDA to contract
+  
     (try! (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer PRICE tx-sender (as-contract tx-sender) none))
     
-    ;; Record order
     (map-set orders tx-sender { 
       size: size,
       ordered-block: burn-block-height, 
@@ -98,7 +90,6 @@
   )
 )
 
-;; 2. Artist confirms shipment with expected delivery days
 (define-public (mark-shipped (buyer principal) (delivery-days uint))
   (let ((order (unwrap! (map-get? orders buyer) ERR_NO_ORDER)))
     (asserts! (is-eq tx-sender (var-get artist)) ERR_UNAUTHORIZED)
@@ -115,7 +106,6 @@
   )
 )
 
-;; 3. Buyer rates satisfaction (0, 50, or 100)
 (define-public (buyer-rates-delivery (rating uint))
   (let ((order (unwrap! (map-get? orders tx-sender) ERR_NO_ORDER)))
     (asserts! (is-some (get shipped-block order)) ERR_NOT_SHIPPED)
@@ -123,10 +113,8 @@
     (asserts! (or (is-eq rating u0) (is-eq rating u50) (is-eq rating u100)) ERR_INVALID_RATING)
     (asserts! (not (get claimed order)) ERR_ALREADY_CLAIMED)
 
-    ;; Record rating
     (map-set orders tx-sender (merge order { rating: (some rating), rated-block: (some burn-block-height) }))
     
-    ;; 100% = instant payout to artist
     (if (is-eq rating u100)
       (execute-rating tx-sender)
       (ok true)
@@ -134,7 +122,6 @@
   )
 )
 
-;; Artist agrees/disagrees with 0% or 50% rating
 (define-public (artist-respond (buyer principal) (agrees bool))
   (let ((order (unwrap! (map-get? orders buyer) ERR_NO_ORDER)))
     (asserts! (is-eq tx-sender (var-get artist)) ERR_UNAUTHORIZED)
@@ -145,7 +132,6 @@
       artist-response: (some agrees)
     }))
     
-    ;; If agrees, execute the rating
     (if agrees
       (execute-rating buyer)
       (ok true)
@@ -153,7 +139,6 @@
   )
 )
 
-;; Oracle decides disputed ratings
 (define-public (oracle-decide (buyer principal) (final-rating uint))
   (let ((order (unwrap! (map-get? orders buyer) ERR_NO_ORDER))
         (rated-block (unwrap! (get rated-block order) ERR_NOT_SHIPPED))
@@ -163,19 +148,17 @@
     
     (asserts! (not (get claimed order)) ERR_ALREADY_CLAIMED)
     (asserts! (is-eq tx-sender ORACLE) ERR_UNAUTHORIZED)
-    (asserts! (<= final-rating u100) ERR_INVALID_RATING) ;; oracle freedom
+    (asserts! (<= final-rating u100) ERR_INVALID_RATING) 
     
     (if (is-none artist-resp) 
-    (asserts! (> burn-block-height artist-response-deadline) ERR_DEADLINE) ;; only if artist did not respond
+    (asserts! (> burn-block-height artist-response-deadline) ERR_DEADLINE) 
     true)
         
-    ;; Update rating and execute    
     (map-set orders buyer (merge order { rating: (some final-rating) }))
     (execute-rating buyer)
   )
 )
 
-;; Artist claims funds if buyer doesn't rate within 2x delivery time
 (define-public (claim-never-rated (buyer principal))
   (let ((order (unwrap! (map-get? orders buyer) ERR_NO_ORDER)))
     (asserts! (is-eq tx-sender (var-get artist)) ERR_UNAUTHORIZED)
@@ -183,13 +166,11 @@
     (asserts! (is-none (get rating order)) ERR_NOT_RATED)
     (asserts! (not (get claimed order)) ERR_ALREADY_CLAIMED)
 
-    ;; Check if 2x delivery time has passed
     (let ((shipped-block (unwrap! (get shipped-block order) ERR_NOT_SHIPPED))
           (delivery-days (unwrap! (get delivery-days order) ERR_NOT_SHIPPED))
-          (deadline (+ shipped-block (* delivery-days u288)))) ;; ~2x days in blocks
+          (deadline (+ shipped-block (* delivery-days u288)))) 
       (asserts! (> burn-block-height deadline) ERR_DEADLINE)
       
-      ;; Mark as 100% and pay artist
       (map-set orders buyer (merge order { rating: (some u100) }))
       (execute-rating buyer)
     )
@@ -209,7 +190,6 @@
   )
 )
 
-;; Execute rating (internal)
 (define-private (execute-rating (buyer principal))
   (let ((order (unwrap! (map-get? orders buyer) ERR_NO_ORDER))
         (rating (unwrap! (get rating order) ERR_NOT_RATED))
@@ -235,7 +215,6 @@
   )
 )
 
-;; Admin functions
 (define-public (set-artist (new-artist principal))
   (begin
     (asserts! (is-eq tx-sender ORACLE) ERR_UNAUTHORIZED)
@@ -250,7 +229,6 @@
 
 (define-public (oracle-refund-incomplete-campaign)
   (begin
-    ;; Check that we're past the campaign deadline (3 weeks = ~3024 burn blocks)
     (asserts! (> burn-block-height (+ CAMPAIGN_START CAMPAIGN_DEADLINE)) ERR_CAMPAIGN_ONGOING)
     
     (asserts! (is-eq (var-get block-completion) u0) ERR_CAMPAIGN_FULL)
@@ -264,7 +242,7 @@
 
 (define-private (refund-buyer (buyer principal) (previous-result (response bool uint)))
   (begin
-    (try! previous-result) ;; this errors out and control flows out if previous is err u1 or other errors and continues if it's ok true
+    (try! previous-result) 
     (as-contract (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer PRICE tx-sender buyer none))
   )
 )

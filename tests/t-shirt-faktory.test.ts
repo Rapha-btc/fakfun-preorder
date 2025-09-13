@@ -3,11 +3,11 @@ import { Cl, cvToValue } from "@stacks/transactions";
 
 const accounts = simnet.getAccounts();
 const deployer = accounts.get("deployer")!;
-const oracle = deployer; // Oracle is the deployer (matches STXER setup)
-const artist = accounts.get("wallet_1")!;
-const buyer1 = accounts.get("wallet_2")!;
-const buyer2 = accounts.get("wallet_3")!;
-const buyer3 = accounts.get("wallet_4")!;
+const oracle = deployer;
+const artist = "SP1QJ6SJWKHH54NJ8AZ48HJQ3MB036XHQKMCKQFMK"; // accounts.get("wallet_1")!;
+const buyer1 = "SM2FXSN6RZ85Q18S3X0GE2N0FVAA1DN1DPPDXEB5X"; // accounts.get("wallet_2")!;
+const buyer2 = "SP1Q1SHSTGQ7HT0CTXF1714NH1RFRZTXBSM4H7CX"; // accounts.get("wallet_3")!;
+const buyer3 = "SP1YW0GTZHM2NG7G8TBCW00A7MABZE1YP9EZ1G2YQ"; // accounts.get("wallet_4")!;
 
 const contractName = "t-shirt-faktory";
 const usdaContract = "SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token";
@@ -68,7 +68,7 @@ const getMainnetBuyer = (index: number): string => {
 // Setup function to match STXER environment exactly
 const setupTestEnvironment = () => {
   // Fund all accounts with STX for gas fees (matches STXER: 100 STX = 1,000,000 microSTX)
-  const gasAmount = 1000000; // 100 STX
+  const gasAmount = 1000000; // 1 STX
 
   // Check STX holder balance first
   const stxHolderBalance = simnet.getAssetsMap().get(stxHolder)?.get("STX");

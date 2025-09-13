@@ -91,6 +91,11 @@ plan:
     - id: 1
       transactions:
         - emulated-contract-publish:
+            contract-name: fakfun-t-shirt-faktory
+            emulated-sender: SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22
+            path: "./.cache/requirements/SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.fakfun-t-shirt-faktory.clar"
+            clarity-version: 3
+        - emulated-contract-publish:
             contract-name: t-shirt-faktory
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/t-shirt-faktory.clar

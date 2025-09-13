@@ -7,6 +7,9 @@ cache_dir = './.cache'
 
 [[project.requirements]]
 contract_id = 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token'
+
+[[project.requirements]]
+contract_id = 'SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.fakfun-t-shirt-faktory'
 [contracts.t-shirt-faktory]
 path = 'contracts/t-shirt-faktory.clar'
 clarity_version = 3
