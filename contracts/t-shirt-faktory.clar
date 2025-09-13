@@ -115,14 +115,13 @@
     (asserts! (not (get claimed order)) ERR_ALREADY_CLAIMED)
 
     ;; Record rating
-    (map-set orders tx-sender (merge order { rating: (some rating), rated-block: burn-block-height }))
+    (map-set orders tx-sender (merge order { rating: (some rating), rated-block: (some burn-block-height) }))
     
     ;; 100% = instant payout to artist
     (if (is-eq rating u100)
       (execute-rating tx-sender)
-      true
+      (ok true)
     )
-    (ok true)
   )
 )
 
@@ -134,7 +133,7 @@
     (asserts! (not (get claimed order)) ERR_ALREADY_CLAIMED)
 
     (map-set orders buyer (merge order { 
-      artist-response: agrees
+      artist-response: (some agrees)
     }))
     
     ;; If agrees, execute the rating
@@ -181,7 +180,6 @@
       ;; Mark as 100% and pay artist
       (map-set orders buyer (merge order { rating: (some u100) }))
       (execute-rating buyer)
-      (ok true)
     )
   )
 )
@@ -196,7 +194,6 @@
 
     (map-set orders buyer (merge order { rating: (some u0) }))
     (execute-rating buyer)
-    (ok true)
   )
 )
 
@@ -208,17 +205,17 @@
     (try! (as-contract (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer FEES tx-sender (var-get oracle) none)))
     (map-set orders buyer (merge order { claimed: true}))
     (if (is-eq rating u100)
-    (try! (as-contract (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer (- PRICE FEES) tx-sender artista none)))
-    (if (is-eq rating u50)
+      (as-contract (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer (- PRICE FEES) tx-sender artista none))
+      (if (is-eq rating u50)
         (begin
-        (try! (as-contract (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer (/ (- PRICE FEES) u2) tx-sender artista none)))
-        (try! (as-contract (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer (- (- PRICE FEES) (/ (- PRICE FEES) u2)) tx-sender buyer none)))
+          (try! (as-contract (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer (/ (- PRICE FEES) u2) tx-sender artista none)))
+          (as-contract (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer (- (- PRICE FEES) (/ (- PRICE FEES) u2)) tx-sender buyer none))
         )
         (if (is-eq rating u0)
-        (try! (as-contract (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer (- PRICE FEES) tx-sender buyer none)))
-        ERR_NOT_A_RATING
+          (as-contract (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer (- PRICE FEES) tx-sender buyer none))
+          ERR_NOT_A_RATING
         )
-    )
+      )
     )
   )
 )
