@@ -1,84 +1,120 @@
-# T-Shirt Faktory Test Results
+# STXER Testing Documentation
 
 ## Overview
 
-Comprehensive test suite for the T-Shirt pre-order smart contract covering all major functionality and edge cases.
+This document explains the testing approach for the t-shirt pre-order contract using both STXER simulations and Clarinet unit tests.
 
-## Test Categories & Results
+## Current Testing Status
 
-### ✅ Campaign Setup & Order Placement
+### STXER Simulation (Mainnet Fork)
 
-- **Order validation**: Successfully accepts valid sizes (S, M, L, XL, etc.)
-- **Duplicate prevention**: Correctly blocks duplicate orders from same buyer (`ERR_ALREADY_ORDERED`)
-- **Invalid size rejection**: Properly rejects invalid sizes like "XYZ" (`ERR_INVALID_SIZE`)
-- **Capacity limits**: Prevents orders beyond 21-order capacity (`ERR_CAMPAIGN_FULL`)
-- **Payment processing**: 50 USDA transfers work correctly for all orders
+- ✅ **Contract deployment and basic functionality**
+- ✅ **USDA token transfers and funding**
+- ✅ **Complete campaign workflow (21 orders)**
+- ✅ **Order placement with validation**
+- ✅ **Artist assignment and shipping**
+- ✅ **Payment distribution scenarios**
+- ✅ **Balance verification**
 
-### ✅ Campaign Completion & Shipping
+### Limitations of STXER
 
-- **Automatic completion**: Campaign correctly completes at exactly 21 orders
-- **Shipping authorization**: Only artist can mark orders as shipped
-- **Delivery time validation**: Rejects delivery estimates > 24 days (`ERR_SHIPPING_TOO_SLOW`)
-- **Deadline enforcement**: Shipping blocked after 2-week deadline (`ERR_DEADLINE`)
-- **Never-shipped claims**: Buyers can claim refunds for unshipped orders after deadline
+- ❌ **Cannot advance chain tip (mine blocks)**
+- ❌ **Cannot test time-dependent logic**
+- ❌ **Cannot test deadline-based functions**
+- ❌ **Limited oracle decision testing**
 
-### ✅ Rating & Payment System
+## Testing Strategy
 
-- **100% ratings**: Instant payout to artist (45 USDA after 5 USDA fee)
-- **50% ratings**: Split payment when artist agrees (22.5 USDA each)
-- **0% ratings**: Full refund to buyer when artist agrees (45 USDA)
-- **Rating validation**: Only accepts 0, 50, or 100 values (`ERR_INVALID_RATING`)
-- **Never-rated claims**: Artist can claim payment if buyer doesn't rate within 2x delivery time
+### STXER Simulations
 
-### ✅ Oracle Dispute Resolution
+Use STXER for testing:
 
-- **Flexible decisions**: Oracle can set any rating 0-100 for maximum discretion
-- **Deadline respect**: Oracle cannot decide before artist response deadline
-- **Payment execution**: Proper fund distribution based on oracle's final rating
-- **Authorization**: Only designated oracle can make decisions
+- Contract deployment on mainnet fork
+- Basic functional workflows
+- Token transfer mechanics
+- Payment calculations
+- Balance verification
+- Happy path scenarios
 
-### ✅ Campaign Failure & Refunds
+### Clarinet Unit Tests
 
-- **Incomplete campaign handling**: Oracle can refund all buyers if campaign doesn't reach 21 orders
-- **Deadline enforcement**: Refunds only allowed after 3-week campaign deadline
-- **Prevention of abuse**: Cannot refund completed campaigns
+Use Clarinet for testing:
 
-### ✅ Error Handling & Edge Cases
+- Time-dependent logic (block advancement)
+- Deadline enforcement
+- Oracle decision timing
+- Campaign failure scenarios
+- Edge cases and error conditions
+- All decision tree branches
 
-- **Authorization checks**: Non-artists cannot perform artist functions
-- **Double-action prevention**: Cannot rate twice, ship twice, or claim twice
-- **State validation**: Proper order state checks throughout workflow
-- **Boundary testing**: Exact deadline testing confirms proper `>` vs `>=` logic
+## Test Coverage Gaps
 
-## Key Contract Improvements
+The following scenarios require Clarinet testing due to time dependencies:
 
-### Oracle Flexibility
+### Time-Dependent Scenarios
 
-The oracle's decision-making was made more flexible:
+1. **Shipping deadline enforcement** (2 weeks after campaign completion)
+2. **Rating deadline** (2x delivery time)
+3. **Artist response deadline** (0.5x delivery time)
+4. **Oracle decision timing** (after artist response deadline)
+5. **Campaign completion deadline** (3 weeks)
+6. **Never-shipped refund claims**
+7. **Never-rated artist claims**
 
-```clarity
-(asserts! (<= final-rating u100) ERR_INVALID_RATING) ;; oracle freedom
+### Decision Tree Branches
+
+- 50% rating + artist disagreement → oracle decision
+- 0% rating + artist disagreement → oracle decision
+- 50% rating + no artist response → oracle decision
+- 0% rating + no artist response → oracle decision
+- Exact deadline boundary testing
+
+## Running Tests
+
+### STXER Simulation
+
+```bash
+npm install stxer@0.4.3
+node simulate.js
 ```
 
-This allows ratings from 0-100 instead of restricting to only 0, 50, 100, giving the oracle full discretion in complex disputes.
+Expected output: Simulation URL with 92 successful steps
 
-### Type Consistency
+### Clarinet Unit Tests
 
-All rating values use `uint` type consistently throughout the contract, matching Clarity's type system requirements.
+```bash
+clarinet test
+```
 
-## Known Simulation Artifacts
+## Test Environment Setup
 
-- Some transaction nonce mismatches appear in simulation logs - these are testing environment issues, not contract bugs
-- Contract logic handles all edge cases correctly with appropriate error codes
+Both testing environments use:
 
-## Test Coverage
+- **USDA Token Contract**: `SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token`
+- **USDA Holder**: `SP3JYMPETBPP4083YFDKF9DP9Y2CPPW082DF3PMSP` (100k+ USDA)
+- **STX Holder**: `SP1TXBBKYYCP3YVK2MH1PMWR7N0H2CYTKVAYH8YG4`
+- **Real mainnet addresses** for comprehensive testing
 
-- **21/21 order capacity testing**: Full campaign simulation
-- **Multiple user scenarios**: 18+ different wallet addresses tested
-- **All major functions**: Every public function tested with valid and invalid inputs
-- **Edge case boundary testing**: Exact deadline and capacity limit validation
-- **Payment flow verification**: USDA token transfers confirmed at each step
+## Simulation Results Analysis
 
-## Conclusion
+The current simulation shows:
 
-The contract successfully handles all intended use cases with robust error handling, proper authorization checks, and flexible dispute resolution. The test suite demonstrates production-ready functionality for a decentralized pre-order system.
+- 92 successful steps
+- Complete campaign workflow
+- Proper payment distribution
+- All major functions working correctly
+- Ready for time-dependent testing in Clarinet
+
+## Next Steps
+
+1. Update Clarinet tests to match STXER setup
+2. Add comprehensive time-dependent test cases
+3. Test all decision tree branches
+4. Validate edge cases and error conditions
+5. Ensure complete test coverage
+
+## Known Issues
+
+- STXER oracle decision testing is limited due to timing constraints
+- Some edge cases can only be tested in Clarinet
+- Need to maintain consistency between both test environments

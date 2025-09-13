@@ -800,11 +800,11 @@ This tests the complete t-shirt pre-order contract workflow with real mainnet ad
 // Run the simulation
 simulateTShirtPreOrderContract().catch(console.error);
 
-// Using block height 3486493 hash 0x0ba0d6a74ef6ea4e5ba9c9d7098a93ec9fbbb64df00b67f6d46ba0db985a5870 to run simulation.
-// Simulation will be available at: https://stxer.xyz/simulations/mainnet/e795f71939b7dc797764d87ec0b8d182
+// Using block height 3501441 hash 0xf599fa811205b9242d1fbf84c5e1fd335fe237efb705b591cc9a705c5a944dc6 to run simulation.
+// Simulation will be available at: https://stxer.xyz/simulations/mainnet/d42a089da17721398166b539b304bd84
 
 // ===== T-SHIRT PRE-ORDER CONTRACT SIMULATION =====
-// Simulation URL: https://stxer.xyz/simulations/mainnet/e795f71939b7dc797764d87ec0b8d182
+// Simulation URL: https://stxer.xyz/simulations/mainnet/d42a089da17721398166b539b304bd84
 
 // Expected Results:
 // - Phase 1: Contract setup with USDA funding and artist assignment
@@ -814,3 +814,5 @@ simulateTShirtPreOrderContract().catch(console.error);
 // - Phase 5: Final verification of balances and order statuses
 
 // This tests the complete t-shirt pre-order contract workflow with real mainnet addresses.
+
+// https://stxer.xyz/simulations/mainnet/c1feb73c49f54330f53868cf8401a1f7

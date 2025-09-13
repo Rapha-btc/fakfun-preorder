@@ -158,13 +158,16 @@
   (let ((order (unwrap! (map-get? orders buyer) ERR_NO_ORDER))
         (rated-block (unwrap! (get rated-block order) ERR_NOT_SHIPPED))
         (delivery-days (unwrap! (get delivery-days order) ERR_NOT_SHIPPED))
-        (artist-response-deadline (+ rated-block (* delivery-days u72))))
+        (artist-response-deadline (+ rated-block (* delivery-days u72)))
+        (artist-resp (get artist-response order)))
     
     (asserts! (not (get claimed order)) ERR_ALREADY_CLAIMED)
     (asserts! (is-eq tx-sender ORACLE) ERR_UNAUTHORIZED)
     (asserts! (<= final-rating u100) ERR_INVALID_RATING) ;; oracle freedom
     
-    (asserts! (> burn-block-height artist-response-deadline) ERR_DEADLINE)
+    (if (is-none artist-resp) 
+    (asserts! (> burn-block-height artist-response-deadline) ERR_DEADLINE) ;; only if artist did not respond
+    true)
         
     ;; Update rating and execute    
     (map-set orders buyer (merge order { rating: (some final-rating) }))
@@ -222,7 +225,10 @@
         )
         (if (is-eq rating u0)
           (as-contract (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer (- PRICE FEES) tx-sender buyer none))
-          ERR_NOT_A_RATING
+          (let ((artist-money (/ (* (- PRICE FEES) rating) u100)))
+          (try! (as-contract (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer artist-money tx-sender artista none)))
+          (as-contract (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer (- (- PRICE FEES) artist-money) tx-sender buyer none))
+          )
         )
       )
     )
