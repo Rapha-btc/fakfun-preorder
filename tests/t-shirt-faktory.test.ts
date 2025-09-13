@@ -72,15 +72,26 @@ describe("T-Shirt Pre-Order Contract Tests", () => {
   beforeEach(() => {
     simnet.setEpoch("3.0");
 
-    // Transfer USDA tokens from the holder to test accounts
-    [deployer, artist, buyer1, buyer2, buyer3].forEach((account) => {
-      transferUsda(1000000000, account); // 1000 USDA
-    });
+    // Check if USDA holder has tokens first
+    const holderBalance = simnet.callReadOnlyFn(
+      usdaContract,
+      "get-balance",
+      [Cl.principal(usdaHolder)],
+      deployer
+    );
 
-    // Transfer to extra wallets for testing
-    extraWallets.forEach((wallet) => {
-      transferUsda(100000000, wallet); // 100 USDA each
-    });
+    // Only transfer if holder has tokens, otherwise skip USDA setup
+    if (cvToValue(holderBalance.result) > 0n) {
+      // Transfer USDA tokens from the holder to test accounts
+      [deployer, artist, buyer1, buyer2, buyer3].forEach((account) => {
+        transferUsda(1000000000, account); // 1000 USDA
+      });
+
+      // Transfer to extra wallets for testing
+      extraWallets.forEach((wallet) => {
+        transferUsda(100000000, wallet); // 100 USDA each
+      });
+    }
 
     // Set artist
     simnet.callPublicFn(
@@ -93,6 +104,22 @@ describe("T-Shirt Pre-Order Contract Tests", () => {
 
   describe("Campaign Setup & Order Placement", () => {
     it("should allow valid orders with correct payment", () => {
+      // Check initial state
+      const initialStatus = simnet.callReadOnlyFn(
+        contractName,
+        "get-campaign-status",
+        [],
+        deployer
+      );
+
+      // Check buyer balance
+      const buyerBalance = simnet.callReadOnlyFn(
+        usdaContract,
+        "get-balance",
+        [Cl.principal(buyer1)],
+        deployer
+      );
+
       const result = simnet.callPublicFn(
         contractName,
         "place-order",
@@ -101,7 +128,6 @@ describe("T-Shirt Pre-Order Contract Tests", () => {
       );
 
       expect(result.result).toBeOk(Cl.bool(true));
-
       // Check order was recorded
       const order = simnet.callReadOnlyFn(
         contractName,
