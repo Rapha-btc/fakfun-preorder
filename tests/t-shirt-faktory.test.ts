@@ -259,7 +259,7 @@ describe("T-Shirt Pre-Order Contract - Comprehensive Tests", () => {
   describe("Time-Dependent Logic (Clarinet-Specific)", () => {
     beforeEach(() => {
       // Complete campaign for time-dependent tests
-      const buyers = [buyer1, buyer2, buyer3, ...mainnetBuyers.slice(0, 18)];
+      const buyers = [...mainnetBuyers.slice(0, 21)];
       buyers.forEach((buyer) => {
         simnet.callPublicFn(
           contractName,
@@ -268,6 +268,12 @@ describe("T-Shirt Pre-Order Contract - Comprehensive Tests", () => {
           buyer
         );
       });
+      const status = simnet.callReadOnlyFn(
+        contractName,
+        "get-campaign-status",
+        [],
+        deployer
+      );
     });
 
     describe("Shipping Deadlines", () => {
@@ -531,25 +537,99 @@ describe("T-Shirt Pre-Order Contract - Comprehensive Tests", () => {
         expect(result.result).toBeOk(Cl.bool(true));
       });
     });
+  });
 
-    describe("Campaign Failure Scenarios", () => {
-      it("should prevent refund of incomplete campaign before deadline", () => {
-        // Place only 3 orders (incomplete campaign)
-        const result = simnet.callPublicFn(
-          contractName,
-          "oracle-refund-incomplete-campaign",
-          [],
-          oracle
-        );
+  // describe("Campaign Failure Scenarios", () => {
+  //   beforeEach(() => {
+  //     // Don't complete the campaign - place only a few orders to keep it incomplete
+  //     simnet.callPublicFn(
+  //       contractName,
+  //       "place-order",
+  //       [Cl.stringAscii("M")],
+  //       buyer1
+  //     );
+  //     simnet.callPublicFn(
+  //       contractName,
+  //       "place-order",
+  //       [Cl.stringAscii("L")],
+  //       buyer2
+  //     );
+  //     simnet.callPublicFn(
+  //       contractName,
+  //       "place-order",
+  //       [Cl.stringAscii("S")],
+  //       buyer3
+  //     );
+  //     // Now we have only 3 orders - campaign is incomplete
+  //   });
+  //   it("should prevent refund of incomplete campaign before deadline", () => {
+  //     // Place only 3 orders (incomplete campaign)
+  //     const result = simnet.callPublicFn(
+  //       contractName,
+  //       "oracle-refund-incomplete-campaign",
+  //       [],
+  //       oracle
+  //     );
 
-        expect(result.result).toBeErr(Cl.uint(114)); // ERR_CAMPAIGN_ONGOING
-      });
+  //     expect(result.result).toBeErr(Cl.uint(114)); // ERR_CAMPAIGN_ONGOING
+  //   });
 
-      it("should allow refund of incomplete campaign after deadline", () => {
-        // Note: Cannot reset simnet in Clarinet, so this test verifies the error
-        // when trying to refund a completed campaign instead of incomplete
+  //   it("should allow refund of incomplete campaign after deadline", () => {
+  //     // Note: Cannot reset simnet in Clarinet, so this test verifies the error
+  //     // when trying to refund a completed campaign instead of incomplete
 
-        // Place only 3 orders
+  //     // Place only 3 orders
+  //     simnet.callPublicFn(
+  //       contractName,
+  //       "place-order",
+  //       [Cl.stringAscii("M")],
+  //       buyer1
+  //     );
+  //     simnet.callPublicFn(
+  //       contractName,
+  //       "place-order",
+  //       [Cl.stringAscii("L")],
+  //       buyer2
+  //     );
+  //     simnet.callPublicFn(
+  //       contractName,
+  //       "place-order",
+  //       [Cl.stringAscii("S")],
+  //       buyer3
+  //     );
+
+  //     // Mine past campaign deadline (3024 blocks = 3 weeks)
+  //     simnet.mineEmptyBlocks(3025);
+
+  //     const result = simnet.callPublicFn(
+  //       contractName,
+  //       "oracle-refund-incomplete-campaign",
+  //       [],
+  //       oracle
+  //     );
+
+  //     expect(result.result).toBeOk(Cl.bool(true));
+  //   });
+
+  //   it("should prevent refund of completed campaigns", () => {
+  //     // Campaign is already completed in beforeEach
+  //     // Mine past campaign deadline
+  //     simnet.mineEmptyBlocks(3025);
+
+  //     const result = simnet.callPublicFn(
+  //       contractName,
+  //       "oracle-refund-incomplete-campaign",
+  //       [],
+  //       oracle
+  //     );
+
+  //     expect(result.result).toBeErr(Cl.uint(102)); // ERR_CAMPAIGN_FULL
+  //   });
+  // });
+
+  describe("Campaign Failure Scenarios", () => {
+    describe("Incomplete Campaign Tests", () => {
+      beforeEach(() => {
         simnet.callPublicFn(
           contractName,
           "place-order",
@@ -568,33 +648,52 @@ describe("T-Shirt Pre-Order Contract - Comprehensive Tests", () => {
           [Cl.stringAscii("S")],
           buyer3
         );
+      });
 
-        // Mine past campaign deadline (3024 blocks = 3 weeks)
-        simnet.mineEmptyBlocks(3025);
-
+      it("should prevent refund of incomplete campaign before deadline", () => {
         const result = simnet.callPublicFn(
           contractName,
           "oracle-refund-incomplete-campaign",
           [],
           oracle
         );
+        expect(result.result).toBeErr(Cl.uint(114));
+      });
 
+      it("should allow refund of incomplete campaign after deadline", () => {
+        simnet.mineEmptyBlocks(3025);
+        const result = simnet.callPublicFn(
+          contractName,
+          "oracle-refund-incomplete-campaign",
+          [],
+          oracle
+        );
         expect(result.result).toBeOk(Cl.bool(true));
+      });
+    });
+
+    describe("Completed Campaign Tests", () => {
+      beforeEach(() => {
+        const buyers = mainnetBuyers.slice(0, 21);
+        buyers.forEach((buyer) => {
+          simnet.callPublicFn(
+            contractName,
+            "place-order",
+            [Cl.stringAscii("M")],
+            buyer
+          );
+        });
       });
 
       it("should prevent refund of completed campaigns", () => {
-        // Campaign is already completed in beforeEach
-        // Mine past campaign deadline
         simnet.mineEmptyBlocks(3025);
-
         const result = simnet.callPublicFn(
           contractName,
           "oracle-refund-incomplete-campaign",
           [],
           oracle
         );
-
-        expect(result.result).toBeErr(Cl.uint(102)); // ERR_CAMPAIGN_FULL
+        expect(result.result).toBeErr(Cl.uint(102));
       });
     });
   });
@@ -659,10 +758,10 @@ describe("T-Shirt Pre-Order Contract - Comprehensive Tests", () => {
           deployer
         );
 
-        const payment =
-          cvToValue(artistBalanceAfter.result) -
-          cvToValue(artistBalanceBefore.result);
-        expect(payment).toBe(45000000n); // 45 USDA payment
+        const balanceBefore = Number(artistBalanceBefore.result.value.value);
+        const balanceAfter = Number(artistBalanceAfter.result.value.value);
+        const payment = balanceAfter - balanceBefore;
+        expect(payment).toBe(45000000); // 45 USDA payment
       });
     });
 
@@ -713,15 +812,24 @@ describe("T-Shirt Pre-Order Contract - Comprehensive Tests", () => {
           deployer
         );
 
-        const artistPayment =
-          cvToValue(artistBalanceAfter.result) -
-          cvToValue(artistBalanceBefore.result);
-        const buyerRefund =
-          cvToValue(buyerBalanceAfter.result) -
-          cvToValue(buyerBalanceBefore.result);
+        const artistBalanceBeforeNum = Number(
+          artistBalanceBefore.result.value.value
+        );
+        const artistBalanceAfterNum = Number(
+          artistBalanceAfter.result.value.value
+        );
+        const buyerBalanceBeforeNum = Number(
+          buyerBalanceBefore.result.value.value
+        );
+        const buyerBalanceAfterNum = Number(
+          buyerBalanceAfter.result.value.value
+        );
 
-        expect(artistPayment).toBe(22500000n); // 22.5 USDA to artist
-        expect(buyerRefund).toBe(22500000n); // 22.5 USDA refund to buyer
+        const artistPayment = artistBalanceAfterNum - artistBalanceBeforeNum;
+        const buyerRefund = buyerBalanceAfterNum - buyerBalanceBeforeNum;
+
+        expect(artistPayment).toBe(22500000); // 22.5 USDA to artist
+        expect(buyerRefund).toBe(22500000); // 22.5 USDA refund to buyer
       });
 
       it("should handle 50% rating + artist disagreement + oracle decision", () => {
