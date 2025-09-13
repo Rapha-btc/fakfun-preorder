@@ -394,6 +394,36 @@ describe("T-Shirt Pre-Order Contract Tests", () => {
   });
 
   describe("Campaign Setup & Order Placement", () => {
+    it("DEBUG: Check simnet response structure", () => {
+      const result = simnet.callPublicFn(
+        contractName,
+        "place-order",
+        [Cl.stringAscii("L")],
+        buyer1
+      );
+
+      console.log("Full result:", result);
+      console.log("Result type:", typeof result.result);
+      console.log("Result structure:", JSON.stringify(result.result, null, 2));
+
+      // Check order was recorded
+      const order = simnet.callReadOnlyFn(
+        contractName,
+        "get-order",
+        [Cl.principal(buyer1)],
+        deployer
+      );
+
+      console.log("Order result:", order);
+      console.log("Order result type:", typeof order.result);
+      console.log(
+        "Order result structure:",
+        JSON.stringify(order.result, null, 2)
+      );
+
+      expect(result.result).toBeOk(Cl.bool(true));
+    });
+
     it("should allow valid orders with correct payment", () => {
       const result = simnet.callPublicFn(
         contractName,
