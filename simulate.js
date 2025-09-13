@@ -7,6 +7,7 @@ import {
   stringAsciiCV,
   noneCV,
   ClarityVersion,
+  boolCV,
 } from "@stacks/transactions";
 
 async function simulateTShirtPreOrderContract() {
@@ -682,7 +683,7 @@ async function simulateTShirtPreOrderContract() {
       function_name: "artist-respond",
       function_args: [
         principalCV(BUYER2),
-        uintCV(1), // Artist agrees to split (true)
+        boolCV(true), // Artist agrees to split (true)
       ],
       sender: ARTIST,
     })
@@ -699,7 +700,7 @@ async function simulateTShirtPreOrderContract() {
       function_name: "artist-respond",
       function_args: [
         principalCV(BUYER3),
-        uintCV(0), // Artist disagrees (false)
+        boolCV(false), // Artist disagrees (false)
       ],
       sender: ARTIST,
     })
@@ -799,19 +800,11 @@ This tests the complete t-shirt pre-order contract workflow with real mainnet ad
 // Run the simulation
 simulateTShirtPreOrderContract().catch(console.error);
 
-// This product can never exist without your support!
-
-// We receive sponsorship funds with:
-// SP212Y5JKN59YP3GYG07K3S8W5SSGE4KH6B5STXER
-
-// Feedbacks and feature requests are welcome.
-// To get in touch: contact@stxer.xyz
-// --------------------------------
-// Using block height 3486087 hash 0x3a39bc20a29e5e988fa9b815ccc277fc2e8aa5414e7ed32d6aafbdc5191732bb to run simulation.
-// Simulation will be available at: https://stxer.xyz/simulations/mainnet/0173f5eba6781d53bef948b1f0d539f2
+// Using block height 3486493 hash 0x0ba0d6a74ef6ea4e5ba9c9d7098a93ec9fbbb64df00b67f6d46ba0db985a5870 to run simulation.
+// Simulation will be available at: https://stxer.xyz/simulations/mainnet/e795f71939b7dc797764d87ec0b8d182
 
 // ===== T-SHIRT PRE-ORDER CONTRACT SIMULATION =====
-// Simulation URL: https://stxer.xyz/simulations/mainnet/0173f5eba6781d53bef948b1f0d539f2
+// Simulation URL: https://stxer.xyz/simulations/mainnet/e795f71939b7dc797764d87ec0b8d182
 
 // Expected Results:
 // - Phase 1: Contract setup with USDA funding and artist assignment

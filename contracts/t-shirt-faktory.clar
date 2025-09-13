@@ -162,7 +162,7 @@
     
     (asserts! (not (get claimed order)) ERR_ALREADY_CLAIMED)
     (asserts! (is-eq tx-sender ORACLE) ERR_UNAUTHORIZED)
-    (asserts! (or (is-eq final-rating u0) (is-eq final-rating u50) (is-eq final-rating u100)) ERR_INVALID_RATING)
+    (asserts! (<= final-rating u100) ERR_INVALID_RATING) ;; oracle freedom
     
     (asserts! (> burn-block-height artist-response-deadline) ERR_DEADLINE)
         
