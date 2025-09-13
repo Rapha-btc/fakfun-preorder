@@ -13,15 +13,39 @@ const contractName = "t-shirt-faktory";
 const usdaContract = "SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token";
 const usdaHolder = "SP3JYMPETBPP4083YFDKF9DP9Y2CPPW082DF3PMSP"; // Address with 100k USDA
 
-16539KKXZKJN098Q08HRX3XBAP541MFS0P",
-  "ST2F4BK4GZH6YFBNHYDDGN4T1RKBA7DA1BJZPJEJJ",
-  "ST31DA6FTSJX2WGTZ69SFY11BH51NZMB0ZW97B5P0",
-  "ST3R5T8WK3B9WH5RRGX9SPXJYZ72E7CQMXQ86RQCX",
-  "ST398K1WZTBVY6FE2YEHM6HP20VSNVSSPJTW0D53M",
-  "ST32HHVBP4S9NWX3G99Q31YQEMQFFJF7X3QHYKWQ7",
-  "ST37HEFTF4FEDFX9DTBQXJHV5MZQHP7Q8BDVNY5DQ",
-  "ST3QXEQFJP3GSMR7VW0E89RV9CZG3B9J4N7AYBGPM",
-  "ST1WQG45Q7WNYRQV0BT9DJ7Q3RQJMHGY2X82MC46D"
+// Mainnet addresses for extra wallets
+const extraWallets = [
+  "SP1H1733V5MZ3SZ9XRW9FKYGEZT0JDGEB8Y634C7R",
+  "SP2F4BK4GZH6YFBNHYDDGN4T1RKBA7DA1BJZPJEJJ",
+  "SP31DA6FTSJX2WGTZ69SFY11BH51NZMB0ZW97B5P0",
+  "SP3R5T8WK3B9WH5RRGX9SPXJYZ72E7CQMXQ86RQCX",
+  "SP398K1WZTBVY6FE2YEHM6HP20VSNVSSPJTW0D53M",
+  "SP32HHVBP4S9NWX3G99Q31YQEMQFFJF7X3QHYKWQ7",
+  "SP37HEFTF4FEDFX9DTBQXJHV5MZQHP7Q8BDVNY5DQ",
+  "SP3QXEQFJP3GSMR7VW0E89RV9CZG3B9J4N7AYBGPM",
+  "SP1WQG45Q7WNYRQV0BT9DJ7Q3RQJMHGY2X82MC46D",
+];
+
+// Valid mainnet addresses for testing - using real, known mainnet addresses
+const validAddresses = [
+  "SP1H1733V5MZ3SZ9XRW9FKYGEZT0JDGEB8Y634C7R",
+  "SP2F4BK4GZH6YFBNHYDDGN4T1RKBA7DA1BJZPJEJJ",
+  "SP31DA6FTSJX2WGTZ69SFY11BH51NZMB0ZW97B5P0",
+  "SP3R5T8WK3B9WH5RRGX9SPXJYZ72E7CQMXQ86RQCX",
+  "SP398K1WZTBVY6FE2YEHM6HP20VSNVSSPJTW0D53M",
+  "SP32HHVBP4S9NWX3G99Q31YQEMQFFJF7X3QHYKWQ7",
+  "SP37HEFTF4FEDFX9DTBQXJHV5MZQHP7Q8BDVNY5DQ",
+  "SP3QXEQFJP3GSMR7VW0E89RV9CZG3B9J4N7AYBGPM",
+  "SP1WQG45Q7WNYRQV0BT9DJ7Q3RQJMHGY2X82MC46D",
+  "SP2JXKMSH007NPYAQHKJPQMAQYAD90NQGTVJVQ02B",
+  "SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE",
+  "SP3QSAJQ4EA8WXEDSRRKMZZ29NH91VZ6C5X88FGZQ",
+  "SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR",
+  "SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9",
+  "SP466FNC0P7JWTNM2R9T199QRZN1MYEDTAR0KP27",
+  "SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1",
+  "SP2TZK01NKDC89J6TA56SA47SDF7RTHYEQ79AAB9A",
+  "SP3DX3H4FEYZJZ586MFBS25ZW3HZDMEW92260R2PR",
 ];
 
 // Helper function to transfer USDA from holder
@@ -122,7 +146,7 @@ describe("T-Shirt Pre-Order Contract Tests", () => {
       const buyers = [buyer1, buyer2, buyer3];
       for (let i = 0; i < 21; i++) {
         const buyer = i < 3 ? buyers[i] : getValidAddress(i);
-        
+
         simnet.callPublicFn(
           contractName,
           "place-order",
@@ -475,6 +499,63 @@ describe("T-Shirt Pre-Order Contract Tests", () => {
 
       expect(result.result).toBeErr(Cl.uint(111)); // ERR_DEADLINE
     });
+
+    // it("should allow oracle to decide disputed ratings", () => {
+    //   // Buyer rates 50%
+    //   simnet.callPublicFn(
+    //     contractName,
+    //     "buyer-rates-delivery",
+    //     [Cl.uint(50)],
+    //     buyer1
+    //   );
+
+    //   // Artist disagrees
+    //   simnet.callPublicFn(
+    //     contractName,
+    //     "artist-respond",
+    //     [Cl.principal(buyer1), Cl.bool(false)],
+    //     artist
+    //   );
+
+    //   // Mine blocks past artist response deadline (0.5x delivery days)
+    //   simnet.mineEmptyBlocks(505); // ~3.5 days for 7-day delivery
+
+    //   // Oracle decides 100%
+    //   const result = simnet.callPublicFn(
+    //     contractName,
+    //     "oracle-decide",
+    //     [Cl.principal(buyer1), Cl.uint(100)],
+    //     oracle
+    //   );
+
+    //   expect(result.result).toBeOk(Cl.bool(true));
+    // });
+
+    it("should prevent oracle decision before deadline", () => {
+      // Buyer rates 50%, artist disagrees
+      simnet.callPublicFn(
+        contractName,
+        "buyer-rates-delivery",
+        [Cl.uint(50)],
+        buyer1
+      );
+      simnet.callPublicFn(
+        contractName,
+        "artist-respond",
+        [Cl.principal(buyer1), Cl.bool(false)],
+        artist
+      );
+
+      // Try oracle decision before deadline
+      const result = simnet.callPublicFn(
+        contractName,
+        "oracle-decide",
+        [Cl.principal(buyer1), Cl.uint(0)],
+        oracle
+      );
+
+      expect(result.result).toBeErr(Cl.uint(111)); // ERR_DEADLINE
+    });
   });
 
   describe("Campaign Failure & Refunds", () => {
@@ -515,8 +596,9 @@ describe("T-Shirt Pre-Order Contract Tests", () => {
     it("should prevent refund of completed campaigns", () => {
       // Complete campaign
       for (let i = 1; i <= 21; i++) {
-        const buyer = i <= 3 ? [buyer1, buyer2, buyer3][i - 1] : getValidAddress(i - 4);
-        
+        const buyer =
+          i <= 3 ? [buyer1, buyer2, buyer3][i - 1] : getValidAddress(i - 4);
+
         simnet.callPublicFn(
           contractName,
           "place-order",
