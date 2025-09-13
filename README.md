@@ -6,6 +6,7 @@ A smart contract system for managing t-shirt orders with built-in dispute resolu
 
 - **Tight deadline protections** against timing abuse
 - **Maximum 24-day delivery estimates**
+- **3-week campaign deadline** - automatic refunds if campaign doesn't reach 21 orders
 - Automated dispute resolution through oracle system
 - Buyer protection with refund mechanisms
 
@@ -21,6 +22,7 @@ The order process follows these phases:
 
 ## Timeline Limits
 
+- Campaign to completion: **3 weeks maximum**
 - Campaign to shipping: **2 weeks maximum**
 - Delivery time: **2x estimated delivery days**
 - Response time: **0.5x delivery days**
@@ -29,6 +31,9 @@ The order process follows these phases:
 
 ```
 Buyer calls place-order(size) + pays 50 USDA
+│
+├─ Campaign never reaches 21 orders (after 3 weeks from start)
+│  └─ Oracle calls oracle-refund-incomplete-campaign() → Full refund to all buyers
 │
 ├─ Artist NEVER ships (after 2 weeks from campaign completion)
 │  └─ Buyer calls claim-never-shipped() → 45 USDA refund + 5 USDA fee to oracle
@@ -95,12 +100,13 @@ Buyer calls place-order(size) + pays 50 USDA
 
 ## Key Deadlines
 
-| Event           | Trigger           | Duration           | Action Required     |
-| --------------- | ----------------- | ------------------ | ------------------- |
-| Shipping        | Campaign complete | 2 weeks            | Artist must ship    |
-| Rating          | Item shipped      | 2x delivery days   | Buyer must rate     |
-| Response        | Buyer rated       | 0.5x delivery days | Artist must respond |
-| Oracle Decision | No response       | 0.5x delivery days | Oracle decides      |
+| Event               | Trigger             | Duration           | Action Required      |
+| ------------------- | ------------------- | ------------------ | -------------------- |
+| Campaign Completion | Contract deployment | 3 weeks            | Must reach 21 orders |
+| Shipping            | Campaign complete   | 2 weeks            | Artist must ship     |
+| Rating              | Item shipped        | 2x delivery days   | Buyer must rate      |
+| Response            | Buyer rated         | 0.5x delivery days | Artist must respond  |
+| Oracle Decision     | No response         | 0.5x delivery days | Oracle decides       |
 
 ## Functions
 
@@ -119,6 +125,8 @@ Buyer calls place-order(size) + pays 50 USDA
 ### Oracle Functions
 
 - `oracle-decide(buyer, final-rating)` - Make final rating decision
+- `oracle-refund-incomplete-campaign()` - Refund failed campaigns
+- `set-artist(new-artist)` - Set artist address
 
 ## Payment Structure
 
@@ -131,4 +139,13 @@ Buyer calls place-order(size) + pays 50 USDA
 1. **Time limits** prevent indefinite disputes
 2. **Oracle intervention** resolves deadlocks
 3. **Automatic refunds** for artist non-compliance
-4. **Rating system** ensures quality incentives
+4. **Campaign failure protection** with full refunds
+5. **Rating system** ensures quality incentives
+
+## Constants
+
+- `TARGET_ORDERS`: 21 orders required for campaign completion
+- `PRICE`: 50 USDA per order
+- `FEES`: 5 USDA oracle fee per transaction
+- `DEADLINE`: 2016 blocks (2 weeks) for shipping
+- `CAMPAIGN_DEADLINE`: 3024 blocks (3 weeks) for campaign completion
