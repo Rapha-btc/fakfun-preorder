@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from "vitest";
-import { Cl } from "@stacks/transactions";
+import { Cl, cvToValue } from "@stacks/transactions";
 
 const accounts = simnet.getAccounts();
 const deployer = accounts.get("deployer")!;
@@ -24,6 +24,364 @@ describe("T-Shirt Pre-Order Contract Tests", () => {
         [Cl.uint(1000000000), Cl.principal(account)], // 1000 USDA
         deployer
       );
+    });
+
+    describe("Missing Decision Tree Branches", () => {
+      beforeEach(() => {
+        // Setup completed campaign with shipped items
+        simnet.callPublicFn(
+          contractName,
+          "place-order",
+          [Cl.stringAscii("M")],
+          buyer1
+        );
+        simnet.callPublicFn(
+          contractName,
+          "place-order",
+          [Cl.stringAscii("L")],
+          buyer2
+        );
+
+        for (let i = 3; i <= 21; i++) {
+          const uniqueBuyer = `ST${i.toString().padStart(39, "0")}`;
+          simnet.callPublicFn(
+            usdaContract,
+            "mint",
+            [Cl.uint(100000000), Cl.principal(uniqueBuyer)],
+            deployer
+          );
+          simnet.callPublicFn(
+            contractName,
+            "place-order",
+            [Cl.stringAscii("M")],
+            uniqueBuyer
+          );
+        }
+
+        simnet.callPublicFn(
+          contractName,
+          "mark-shipped",
+          [Cl.principal(buyer1), Cl.uint(7)],
+          artist
+        );
+        simnet.callPublicFn(
+          contractName,
+          "mark-shipped",
+          [Cl.principal(buyer2), Cl.uint(10)],
+          artist
+        );
+      });
+
+      it("should handle 50% rating with artist disagreement and oracle decision", () => {
+        // Buyer rates 50%
+        simnet.callPublicFn(
+          contractName,
+          "buyer-rates-delivery",
+          [Cl.uint(50)],
+          buyer1
+        );
+
+        // Artist disagrees
+        simnet.callPublicFn(
+          contractName,
+          "artist-respond",
+          [Cl.principal(buyer1), Cl.bool(false)],
+          artist
+        );
+
+        // Mine blocks past artist response deadline (0.5x delivery days = ~3.5 days)
+        simnet.mineEmptyBlocks(505); // ~3.5 days for 7-day delivery
+
+        // Oracle decides 75% (oracle can decide any value)
+        const result = simnet.callPublicFn(
+          contractName,
+          "oracle-decide",
+          [Cl.principal(buyer1), Cl.uint(50)], // Oracle maintains 50%
+          oracle
+        );
+
+        expect(result.result).toBeOk(Cl.bool(true));
+
+        // Check final rating was set to oracle decision
+        const order = simnet.callReadOnlyFn(
+          contractName,
+          "get-order",
+          [Cl.principal(buyer1)],
+          deployer
+        );
+        if (order.result.type === "some") {
+          const orderData = cvToValue(order.result).value;
+          expect(orderData.rating).toBe(50);
+        }
+      });
+
+      it("should handle 50% rating with no artist response and oracle decision", () => {
+        // Buyer rates 50%
+        simnet.callPublicFn(
+          contractName,
+          "buyer-rates-delivery",
+          [Cl.uint(50)],
+          buyer1
+        );
+
+        // Artist does NOT respond
+        // Mine blocks past artist response deadline
+        simnet.mineEmptyBlocks(505);
+
+        // Oracle decides
+        const result = simnet.callPublicFn(
+          contractName,
+          "oracle-decide",
+          [Cl.principal(buyer1), Cl.uint(100)], // Oracle decides 100%
+          oracle
+        );
+
+        expect(result.result).toBeOk(Cl.bool(true));
+
+        // Check oracle decision was executed
+        const order = simnet.callReadOnlyFn(
+          contractName,
+          "get-order",
+          [Cl.principal(buyer1)],
+          deployer
+        );
+        if (order.result.type === "some") {
+          const orderData = cvToValue(order.result).value;
+          expect(orderData.rating).toBe(100);
+        }
+      });
+
+      it("should handle 0% rating with artist disagreement and oracle decision", () => {
+        // Buyer rates 0%
+        simnet.callPublicFn(
+          contractName,
+          "buyer-rates-delivery",
+          [Cl.uint(0)],
+          buyer1
+        );
+
+        // Artist disagrees
+        simnet.callPublicFn(
+          contractName,
+          "artist-respond",
+          [Cl.principal(buyer1), Cl.bool(false)],
+          artist
+        );
+
+        // Mine blocks past response deadline
+        simnet.mineEmptyBlocks(505);
+
+        // Oracle decides 50% as compromise
+        const result = simnet.callPublicFn(
+          contractName,
+          "oracle-decide",
+          [Cl.principal(buyer1), Cl.uint(50)],
+          oracle
+        );
+
+        expect(result.result).toBeOk(Cl.bool(true));
+
+        // Verify oracle decision
+        const order = simnet.callReadOnlyFn(
+          contractName,
+          "get-order",
+          [Cl.principal(buyer1)],
+          deployer
+        );
+        if (order.result.type === "some") {
+          const orderData = cvToValue(order.result).value;
+          expect(orderData.rating).toBe(50);
+        }
+      });
+
+      it("should handle 0% rating with no artist response and oracle decision", () => {
+        // Buyer rates 0%
+        simnet.callPublicFn(
+          contractName,
+          "buyer-rates-delivery",
+          [Cl.uint(0)],
+          buyer1
+        );
+
+        // Artist does NOT respond
+        // Mine blocks past deadline
+        simnet.mineEmptyBlocks(505);
+
+        // Oracle decides buyer deserves 0% (full refund)
+        const result = simnet.callPublicFn(
+          contractName,
+          "oracle-decide",
+          [Cl.principal(buyer1), Cl.uint(0)],
+          oracle
+        );
+
+        expect(result.result).toBeOk(Cl.bool(true));
+
+        // Check final rating
+        const order = simnet.callReadOnlyFn(
+          contractName,
+          "get-order",
+          [Cl.principal(buyer1)],
+          deployer
+        );
+        if (order.result.type === "some") {
+          const orderData = cvToValue(order.result).value;
+          expect(orderData.rating).toBe(0);
+        }
+      });
+
+      it("should detect campaign completion on 21st order", () => {
+        // Start fresh campaign
+        simnet.deployContract(
+          contractName,
+          `;; Fresh contract for completion test`,
+          null,
+          deployer
+        );
+
+        // Place 20 orders
+        for (let i = 1; i <= 20; i++) {
+          const buyer = `ST${i.toString().padStart(39, "0")}`;
+          simnet.callPublicFn(
+            usdaContract,
+            "mint",
+            [Cl.uint(100000000), Cl.principal(buyer)],
+            deployer
+          );
+          simnet.callPublicFn(
+            contractName,
+            "place-order",
+            [Cl.stringAscii("M")],
+            buyer
+          );
+        }
+
+        // Verify not complete
+        const statusBefore = simnet.callReadOnlyFn(
+          contractName,
+          "get-campaign-status",
+          [],
+          deployer
+        );
+        const beforeData = cvToValue(statusBefore.result);
+        expect(beforeData.orders).toBe(20);
+
+        // Place 21st order
+        const buyer21 = "ST000000000000000000000000000000000000021";
+        simnet.callPublicFn(
+          usdaContract,
+          "mint",
+          [Cl.uint(100000000), Cl.principal(buyer21)],
+          deployer
+        );
+        simnet.callPublicFn(
+          contractName,
+          "place-order",
+          [Cl.stringAscii("L")],
+          buyer21
+        );
+
+        // Verify completion
+        const statusAfter = simnet.callReadOnlyFn(
+          contractName,
+          "get-campaign-status",
+          [],
+          deployer
+        );
+        const afterData = cvToValue(statusAfter.result);
+        expect(afterData.orders).toBe(21);
+        expect(afterData.target).toBe(21);
+      });
+
+      it("should handle multiple buyer refunds in campaign failure", () => {
+        // Start fresh for this test
+        const buyers = [buyer1, buyer2, buyer3];
+
+        // Place incomplete orders
+        buyers.forEach((buyer, index) => {
+          simnet.callPublicFn(
+            contractName,
+            "place-order",
+            [Cl.stringAscii("M")],
+            buyer
+          );
+        });
+
+        // Record initial balances
+        const initialBalances = buyers.map((buyer) => {
+          const balance = simnet.callReadOnlyFn(
+            usdaContract,
+            "get-balance",
+            [Cl.principal(buyer)],
+            deployer
+          );
+          return cvToValue(balance.result);
+        });
+
+        // Mine past campaign deadline
+        simnet.mineEmptyBlocks(3025);
+
+        // Oracle refunds campaign
+        const result = simnet.callPublicFn(
+          contractName,
+          "oracle-refund-incomplete-campaign",
+          [],
+          oracle
+        );
+
+        expect(result.result).toBeOk(Cl.bool(true));
+
+        // Verify all buyers got refunded
+        buyers.forEach((buyer, index) => {
+          const balance = simnet.callReadOnlyFn(
+            usdaContract,
+            "get-balance",
+            [Cl.principal(buyer)],
+            deployer
+          );
+          const finalBalance = cvToValue(balance.result);
+          const refund = finalBalance - initialBalances[index];
+          expect(refund).toBe(50000000n); // Full 50 USDA refund
+        });
+      });
+
+      it("should handle edge case timing at exact deadlines", () => {
+        // Test shipping exactly at deadline
+        simnet.mineEmptyBlocks(2016); // Exactly at deadline
+
+        const shippingResult = simnet.callPublicFn(
+          contractName,
+          "mark-shipped",
+          [Cl.principal(buyer1), Cl.uint(7)],
+          artist
+        );
+
+        // Should fail at exact deadline (> not >=)
+        expect(shippingResult.result).toBeErr(Cl.uint(111)); // ERR_DEADLINE
+      });
+
+      it("should handle rating deadline boundaries correctly", () => {
+        // Ship and test rating deadline
+        simnet.callPublicFn(
+          contractName,
+          "mark-shipped",
+          [Cl.principal(buyer1), Cl.uint(7)],
+          artist
+        );
+
+        // Mine to exactly 2x delivery time (14 days = ~4032 blocks)
+        simnet.mineEmptyBlocks(4032);
+
+        // Artist should be able to claim at exact boundary
+        const result = simnet.callPublicFn(
+          contractName,
+          "claim-never-rated",
+          [Cl.principal(buyer1)],
+          artist
+        );
+
+        expect(result.result).toBeOk(Cl.bool(true));
+      });
     });
 
     // Set artist
