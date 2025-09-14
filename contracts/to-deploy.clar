@@ -81,6 +81,17 @@
       artist-response: none,
       claimed: false
     })
+    (print 
+         {  type: "place-order",
+            order: tx-sender,
+            size: size,
+            ordered-block: burn-block-height, 
+            shipped-block: none, 
+            delivery-days: none,
+            rating: none,
+            rated-block: none,
+            artist-response: none,
+            claimed: false})
     (var-set buyer-list (unwrap! (as-max-len? (append (var-get buyer-list) tx-sender) u21) ERR_CAMPAIGN_FULL))
     (var-set total-orders (+ (var-get total-orders) u1))
     (if (is-eq (var-get total-orders) TARGET_ORDERS)
@@ -102,11 +113,16 @@
       shipped-block: (some burn-block-height),
       delivery-days: (some delivery-days)
     }))
+    (print 
+         {  type: "mark-shipped",
+            order: buyer,
+            shipped-block: (some burn-block-height),
+            delivery-days: (some delivery-days)})
     (ok true)
   )
 )
 
-(define-public (buyer-rates-delivery (rating uint))
+(define-public (buyer-rate-delivery (rating uint))
   (let ((order (unwrap! (map-get? orders tx-sender) ERR_NO_ORDER)))
     (asserts! (is-some (get shipped-block order)) ERR_NOT_SHIPPED)
     (asserts! (is-none (get rating order)) ERR_ALREADY_RATED)
@@ -114,7 +130,11 @@
     (asserts! (not (get claimed order)) ERR_ALREADY_CLAIMED)
 
     (map-set orders tx-sender (merge order { rating: (some rating), rated-block: (some burn-block-height) }))
-    
+    (print 
+         {  type: "buyer-rate-delivery",
+            order: tx-sender,
+            rating: (some rating), 
+            rated-block: (some burn-block-height)})
     (if (is-eq rating u100)
       (execute-rating tx-sender)
       (ok true)
@@ -131,7 +151,11 @@
     (map-set orders buyer (merge order { 
       artist-response: (some agrees)
     }))
-    
+    (print 
+         {  type: "artist-respond",
+            order: buyer,
+            artist-response: (some agrees)})
+
     (if agrees
       (execute-rating buyer)
       (ok true)
@@ -155,6 +179,10 @@
     true)
         
     (map-set orders buyer (merge order { rating: (some final-rating) }))
+    (print 
+         {  type: "oracle-decide",
+            order: buyer,
+            rating: (some final-rating)})
     (execute-rating buyer)
   )
 )
@@ -172,6 +200,10 @@
       (asserts! (> burn-block-height deadline) ERR_DEADLINE)
       
       (map-set orders buyer (merge order { rating: (some u100) }))
+      (print 
+         {  type: "claim-never-rated",
+            order: buyer,
+            rating: (some u100)})
       (execute-rating buyer)
     )
   )
@@ -186,6 +218,10 @@
     (asserts! (not (get claimed order)) ERR_ALREADY_CLAIMED)
 
     (map-set orders buyer (merge order { rating: (some u0) }))
+    (print 
+         {  type: "claim-never-shipped",
+            order: buyer,
+            rating: (some u0)})
     (execute-rating buyer)
   )
 )
@@ -196,6 +232,12 @@
         (artista (var-get artist)))
     (try! (as-contract (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer FEES tx-sender ORACLE none)))
     (map-set orders buyer (merge order { claimed: true}))
+    (print 
+         {  type: "execute-rating",
+            order: buyer,
+            rating: rating,
+            artist: artista,
+            fees: FEES})
     (if (is-eq rating u100)
       (as-contract (contract-call? 'SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token transfer (- PRICE FEES) tx-sender artista none))
       (if (is-eq rating u50)
@@ -219,6 +261,9 @@
   (begin
     (asserts! (is-eq tx-sender ORACLE) ERR_UNAUTHORIZED)
     (var-set artist new-artist)
+    (print 
+         {  type: "set-artist",
+            artist: new-artist})
     (ok true)
   )
 )
@@ -227,15 +272,17 @@
   (ok (var-get artist))
 )
 
-(define-public (oracle-refund-incomplete-campaign)
+(define-public (refund-incomplete-campaign)
   (begin
     (asserts! (> burn-block-height (+ CAMPAIGN_START CAMPAIGN_DEADLINE)) ERR_CAMPAIGN_ONGOING)
     
     (asserts! (is-eq (var-get block-completion) u0) ERR_CAMPAIGN_FULL)
     (asserts! (< (var-get total-orders) TARGET_ORDERS) ERR_CAMPAIGN_FULL)
 
-    (asserts! (is-eq tx-sender ORACLE) ERR_UNAUTHORIZED)
     (var-set campaign-status u0)
+    (print 
+         {  type: "refund-incomplete-campaign",
+            campaign-status: u0})
     (fold refund-buyer (var-get buyer-list) (ok true))
   )
 )
